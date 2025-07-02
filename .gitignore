@@ -211,3 +211,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- Project-specific runtime artifacts (Figma Text API) ---
+# SQLite database generated at runtime
+mobile_app_data.db
+
+# Background server output & PID tracking files
+figma_api.out
+figma_api.pid
+
+# Generic runtime logs and nohup outputs
+*.log
+*.out
+*.pid

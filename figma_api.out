@@ -15,3 +15,4 @@ INFO:     54.86.50.139:37353 - "GET /api/figma/data HTTP/1.1" 200 OK
 INFO:     186.32.74.13:54827 - "GET /api/figma/texts HTTP/1.1" 200 OK
 INFO:     186.32.74.13:54827 - "GET /favicon.ico HTTP/1.1" 404 Not Found
 INFO:     81.207.176.225:0 - "GET / HTTP/1.0" 404 Not Found
+INFO:     54.86.50.139:47429 - "GET /api/figma/data HTTP/1.1" 200 OK

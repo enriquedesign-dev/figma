@@ -1,0 +1,17 @@
+🚀 Starting Figma Text API Server...
+======================================
+🗄️  Initializing database...
+✅ Database ready
+🌐 Starting server on http://0.0.0.0:8000
+📖 API docs available at http://0.0.0.0:8000/docs
+
+Press Ctrl+C to stop the server
+======================================
+INFO:     Started server process [131517]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     54.86.50.139:37353 - "GET /api/figma/data HTTP/1.1" 200 OK
+INFO:     186.32.74.13:54827 - "GET /api/figma/texts HTTP/1.1" 200 OK
+INFO:     186.32.74.13:54827 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     81.207.176.225:0 - "GET / HTTP/1.0" 404 Not Found

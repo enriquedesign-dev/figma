@@ -110,4 +110,6 @@ class FigmaClient:
     async def get_organized_text_data(self, file_key: str) -> Dict[str, Any]:
         """Main method to get organized text data from Figma file"""
         file_data = await self.get_file(file_key)
-        return self.organize_by_pages_and_screens(file_data) 
+        return self.organize_by_pages_and_screens(file_data)
+    
+ 

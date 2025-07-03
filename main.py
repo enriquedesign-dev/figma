@@ -1,9 +1,10 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from collections import OrderedDict
 import os
 from dotenv import load_dotenv
+from typing import Dict, List
 
 from database import create_tables, get_db
 from figma_client import FigmaClient
@@ -166,7 +167,7 @@ async def get_figma_data():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/sync", response_model=SyncResponse)
-async def sync_figma_file(background_tasks: BackgroundTasks):
+async def sync_figma_file(background_tasks: BackgroundTasks, debug: bool = Query(False)):
     """Sync default Figma file data to database"""
     try:
         default_file_key = os.getenv("FIGMA_FILE_KEY")
@@ -178,7 +179,7 @@ async def sync_figma_file(background_tasks: BackgroundTasks):
             )
         
         # Run sync in background for faster response
-        result = await sync_service.sync_figma_data(default_file_key)
+        result = await sync_service.sync_figma_data(default_file_key, debug=debug)
         return SyncResponse(**result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Sync failed: {str(e)}")
@@ -308,13 +309,10 @@ async def get_screen_data(page_name: str, screen_name: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
 @app.get("/api/test")
 async def test_simple():
     """Simple test endpoint"""
     return {"message": "Test endpoint working", "status": "ok"}
-
-
 
 if __name__ == "__main__":
     import uvicorn

@@ -5,6 +5,7 @@ from typing import Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from sqlalchemy.dialects.sqlite import insert
+import os
 
 from database import AsyncSessionLocal, FigmaPage, FigmaText
 from figma_client import FigmaClient
@@ -13,21 +14,30 @@ class SyncService:
     def __init__(self, figma_client: FigmaClient):
         self.figma_client = figma_client
     
-    async def sync_figma_data(self, file_key: str) -> Dict[str, Any]:
-        """Main sync function to fetch and store Figma data"""
+    async def sync_figma_data(self, file_key: str, debug: bool = False) -> Dict[str, Any]:
+        """Main sync function to fetch and store Figma data."""
         try:
-            # Fetch organized data from Figma
+            # Fetch organized text data from Figma UI file
             organized_data = await self.figma_client.get_organized_text_data(file_key)
-            
-            # Store in database
             pages_updated, texts_updated = await self._store_data(file_key, organized_data)
-            
+
+            debug_info: Dict[str, Any] | None = None
+
+            # Generate debug details if requested
+            if debug:
+                debug_info = {
+                    "page_names": list(organized_data.keys()),
+                    "pages_updated": pages_updated,
+                    "texts_updated": texts_updated,
+                }
+
             return {
                 "success": True,
                 "message": "Data synchronized successfully",
                 "pages_updated": pages_updated,
                 "texts_updated": texts_updated,
-                "last_sync": datetime.utcnow()
+                "last_sync": datetime.utcnow(),
+                "debug_info": debug_info,
             }
         except Exception as e:
             return {
@@ -35,7 +45,8 @@ class SyncService:
                 "message": f"Sync failed: {str(e)}",
                 "pages_updated": 0,
                 "texts_updated": 0,
-                "last_sync": datetime.utcnow()
+                "last_sync": datetime.utcnow(),
+                "debug_info": None,
             }
     
     async def _store_data(self, file_key: str, organized_data: Dict[str, Any]) -> tuple[int, int]:
@@ -109,4 +120,6 @@ class SyncService:
                 "pages": organized_data["pages"],
                 "last_updated": latest_update,
                 "figma_file_key": file_key
-            } 
+            }
+
+ 

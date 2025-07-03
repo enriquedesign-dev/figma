@@ -42,6 +42,8 @@ class FigmaText(Base):
     last_updated = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+
+
 async def get_db():
     async with AsyncSessionLocal() as session:
         try:
@@ -51,4 +53,6 @@ async def get_db():
 
 async def create_tables():
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all) 
+        await conn.run_sync(Base.metadata.create_all)
+
+ 

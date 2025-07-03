@@ -27,8 +27,11 @@ class SyncResponse(BaseModel):
     pages_updated: int
     texts_updated: int
     last_sync: datetime
+    debug_info: Dict[str, Any] | None = None
 
 class HealthResponse(BaseModel):
     status: str
     database_connected: bool
-    figma_api_configured: bool 
+    figma_api_configured: bool
+
+ 

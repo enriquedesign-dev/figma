@@ -319,23 +319,33 @@ python main.py 2>&1 | tee app.log
 
 ## Background / Daemon Mode (nohup)
 
-If you need the API to keep running after you close your SSH session or terminal window, start it in **daemon mode** using the helper script `start_api_nohup.sh`:
+If you need the API to keep running after you close your SSH session or terminal window, use the **single manager script** `manage_api.sh`:
 
 ```bash
 # One-time: make the script executable
-chmod +x start_api_nohup.sh
+chmod +x manage_api.sh
 
-# Launch the backend in the background
-./start_api_nohup.sh start
+# Start the backend in the background (nohup)
+./manage_api.sh start
 
-# Verify that it is running
-./start_api_nohup.sh status
+# Check running status & PID
+./manage_api.sh status
 
-# Follow the live output
-tail -f figma_api.out
+# Tail live logs (Ctrl-C to exit)
+./manage_api.sh logs
 
-# Gracefully stop the background server (optional)
-./start_api_nohup.sh stop
+# Gracefully restart
+./manage_api.sh restart
+
+# Stop the background server
+./manage_api.sh stop
 ```
 
-The script wraps `run_server.sh` with `nohup`, redirects all output to `figma_api.out`, and stores the process ID in `figma_api.pid` so that subsequent `status`, `stop`, or `restart` commands work reliably.
+The script automatically:
+
+1. Creates/activates the Python virtual environment (`venv/`) and installs missing requirements.
+2. Runs database migrations to ensure tables exist.
+3. Launches the API in the background using `nohup`, writing logs to `logs/figma_api.log`.
+4. Stores the process ID in `manage_api.pid` so that subsequent `status`, `stop`, or `restart` commands work reliably.
+
+No more multiple shell scripts or stray `*.out` files are needed – `manage_api.sh` is the only thing you need to control the API lifecycle.

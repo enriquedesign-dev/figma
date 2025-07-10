@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -20,12 +20,16 @@ class FigmaPage(Base):
     __tablename__ = "figma_pages"
     
     id = Column(Integer, primary_key=True, index=True)
-    page_id = Column(String, unique=True, index=True)
+    page_id = Column(String, index=True)
     page_name = Column(String, index=True)
     figma_file_key = Column(String, index=True)
     json_data = Column(Text)  # Store complete JSON structure
     last_updated = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint('figma_file_key', 'page_id', name='_figma_file_page_uc'),
+    )
 
 class FigmaText(Base):
     __tablename__ = "figma_texts"

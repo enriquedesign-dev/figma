@@ -26,39 +26,39 @@ class FigmaClient:
             return response.json()
     
     def extract_text_nodes(self, node: Dict[str, Any], parent_screen: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Recursively extract text nodes from Figma file structure.
-
-        Hidden layers (``visible`` == False) are ignored entirely so they will not
-        surface in the API responses.
         """
-
-        # Skip any node (and its subtree) that is not visible in Figma
-        if node.get("visible", True) is False:
+        Recursively extract all text nodes from a given node in the Figma file structure.
+        This function now traverses into container nodes like GROUP, COMPONENT, and INSTANCE,
+        in addition to FRAME, ensuring all nested text is found.
+        
+        Hidden layers (visible=False) are ignored.
+        """
+        if not node.get("visible", True):
             return []
 
         text_nodes = []
-        
-        # Check if current node is a text node
-        if node.get("type") == "TEXT":
-            text_data = {
+        node_type = node.get("type")
+
+        # If the current node is a text node, extract its content
+        if node_type == "TEXT":
+            text_nodes.append({
                 "name": node.get("name", ""),
                 "content": self._extract_text_content(node),
                 "axis_x": node.get("absoluteBoundingBox", {}).get("x", 0),
                 "axis_y": node.get("absoluteBoundingBox", {}).get("y", 0),
-                "screen": parent_screen
-            }
-            text_nodes.append(text_data)
-        
-        # Check if current node is a frame (potential screen)
-        if node.get("type") == "FRAME":
+                "screen": parent_screen,
+            })
+
+        # If the current node is a container, update the screen context if it's a FRAME
+        # and recurse through its children.
+        current_screen = parent_screen
+        if node_type == "FRAME":
             current_screen = node.get("name", parent_screen)
-            # Process children with current frame as screen context
+
+        # Recurse into children of container nodes
+        if node_type in ("FRAME", "GROUP", "COMPONENT", "INSTANCE") and "children" in node:
             for child in node.get("children", []):
                 text_nodes.extend(self.extract_text_nodes(child, current_screen))
-        else:
-            # For other node types, continue with existing screen context
-            for child in node.get("children", []):
-                text_nodes.extend(self.extract_text_nodes(child, parent_screen))
         
         return text_nodes
     

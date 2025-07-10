@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, Query
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, Query, Response
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from collections import OrderedDict
@@ -10,12 +11,14 @@ from database import create_tables, get_db
 from figma_client import FigmaClient
 from sync_service import SyncService
 from schemas import FigmaDataResponse, SyncResponse, HealthResponse
+from localization_service import LocalizationService
 
 load_dotenv()
 
 # Initialize Figma client and sync service
 figma_client = FigmaClient()
 sync_service = SyncService(figma_client)
+localization_service = LocalizationService(sync_service)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -308,11 +311,50 @@ async def get_screen_data(page_name: str, screen_name: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/figma/android/{page_name}/{language}", response_class=Response)
+async def get_android_localization(page_name: str, language: str):
+    """
+    Generate Android localization file (strings.xml) for a specific page.
+    The {language} parameter is for path compatibility but content is from Figma.
+    """
+    try:
+        default_file_key = os.getenv("FIGMA_FILE_KEY")
+        if not default_file_key:
+            raise HTTPException(status_code=400, detail="FIGMA_FILE_KEY not set")
+
+        xml_data = await localization_service.generate_xml_output(default_file_key, page_name)
+
+        if xml_data is None:
+            raise HTTPException(status_code=404, detail=f"Page '{page_name}' not found or has no text content.")
+        
+        return Response(content=xml_data, media_type="application/xml")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.get("/api/figma/ios/{page_name}/{language}", response_class=JSONResponse)
+async def get_ios_localization(page_name: str, language: str):
+    """
+    Generate iOS-style JSON localization file for a specific page.
+    The {language} parameter is for path compatibility but content is from Figma.
+    """
+    try:
+        default_file_key = os.getenv("FIGMA_FILE_KEY")
+        if not default_file_key:
+            raise HTTPException(status_code=400, detail="FIGMA_FILE_KEY not set")
+
+        json_data = await localization_service.generate_json_output(default_file_key, page_name)
+
+        if json_data is None:
+            raise HTTPException(status_code=404, detail=f"Page '{page_name}' not found or has no text content.")
+        
+        return JSONResponse(content=json_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @app.get("/api/test")
 async def test_simple():
     """Simple test endpoint"""
-    return {"message": "Test endpoint working", "status": "ok"}
+    return {"message": "Test endpoint is working"}
 
 if __name__ == "__main__":
     import uvicorn

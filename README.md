@@ -256,61 +256,6 @@ crontab -e
 2. **Get File Key:**
    - Copy from Figma file URL: `https://www.figma.com/file/{FILE_KEY}/...`
 
-## Usage Examples
-
-### Mobile App Integration
-
-```javascript
-// Option 1: Get all texts from default file (easiest)
-const response = await fetch('/api/figma/texts');
-const data = await response.json();
-
-console.log(`Found ${data.total_texts} texts`);
-
-// Navigate the nested structure (texts are ordered by axis_y - top to bottom)
-Object.entries(data.pages).forEach(([pageName, screens]) => {
-  Object.entries(screens).forEach(([screenName, texts]) => {
-    console.log(`\n📱 ${screenName} reading order:`);
-    // Sort by numbered keys to maintain reading order
-    Object.entries(texts)
-      .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
-      .forEach(([textKey, textData], index) => {
-        console.log(`${index + 1}. ${textKey}: "${textData.text_content}" (y=${textData.axis_y})`);
-      });
-  });
-});
-
-// Or access specific text directly using numbered keys
-const title = data.pages['Onboarding']['1-informacion-salarial-default']['01_Title'];
-console.log(title.text_content); // "Información salarial"
-
-// Note: If there are duplicate text names within the same screen, 
-// they are automatically numbered (e.g., "Field label", "Field label_1", "Field label_2")
-const secondFieldLabel = data.pages['Onboarding']['1-informacion-salarial-default']['03_Field label_1'];
-console.log(secondFieldLabel.text_content); // "Ingreso fijo mensual"
-
-// Option 2: Get data for a specific page
-const pageResponse = await fetch('/api/figma/pages/HomePage');
-const pageData = await pageResponse.json();
-
-// Access screen texts
-const loginScreenTexts = pageData.page.screens['Login Screen'].texts;
-loginScreenTexts.forEach(text => {
-  console.log(`${text.name}: ${text.content}`);
-});
-```
-
-### Sync Before App Build
-
-```bash
-# In your CI/CD pipeline
-python sync_script.py  # Uses FIGMA_FILE_KEY from environment
-python main.py &
-# Run your tests/build process
-
-# Or via API
-curl -X POST http://localhost:8000/api/sync
-```
 
 ## Development
 
@@ -342,29 +287,3 @@ The system uses two main tables:
 2. **Set up reverse proxy (nginx)**
 3. **Configure automated sync via cron**
 4. **Monitor API health endpoint**
-
-### Docker Deployment (Optional)
-
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-EXPOSE 8000
-CMD ["python", "main.py"]
-```
-
-## Performance
-
-- **Lightweight**: SQLite database, minimal dependencies
-- **Fast**: Async FastAPI with efficient queries
-- **Small**: ~50MB total footprint including dependencies
-- **Scalable**: Stateless API design for horizontal scaling
-
-## Troubleshooting
-
-### Common Issues
-
-1. **"Import could not be resolved"**: Install dependencies with `pip install -r requirements.txt`
-2. **"No data found"**: Run sync first with `POST /api/sync` or `

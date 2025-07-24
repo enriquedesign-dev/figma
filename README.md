@@ -14,16 +14,39 @@ A lightweight FastAPI backend that integrates with the Figma API to serve JSON f
 
 ## Architecture
 
+The system's architecture is designed for decoupling and efficiency. A synchronization service pulls data from Figma and stores it in a local database, which is then served to clients by a high-performance FastAPI server.
+
 ```
-┌─────────────────┐    ┌──────────────┐    ┌─────────────┐
-│   Figma API     │───▶│  Sync Service │───▶│  Database   │
-└─────────────────┘    └──────────────┘    └─────────────┘
-                              │
-                              ▼
-┌─────────────────┐    ┌──────────────┐    ┌─────────────┐
-│  Mobile App     │◀───│  FastAPI     │◀───│ JSON Files  │
-└─────────────────┘    └──────────────┘    └─────────────┘
+                            +-----------------+
+                            |   Figma API     |
+                            +-----------------+
+                                    |
+            (1. Manual/Scheduled Sync) |
+                                    v
++--------------------------------------------------------------------------+
+| Backend System                                                           |
+|                                                                          |
+|   +-----------------+        +-----------------+       +-----------------+  |
+|   |  Sync Service   |----(2)->| SQLite Database |<--(3)--|  FastAPI Server |  |
+|   | (sync_service.py)|        | (mobile_app_data.db)|   |    (main.py)    |  |
+|   +-----------------+        +-----------------+       +-----------------+  |
+|                                                                          |
++--------------------------------------------------------------------------+
+                                                                   ^
+                                                                   | (4. API Request)
+                                                                   |
+                                                        +----------------------+
+                                                        | Mobile App (Client)  |
+                                                        | (iOS / Android)      |
+                                                        +----------------------+
 ```
+
+### Data Flow
+
+1.  **Synchronization**: The **Sync Service** is triggered, either manually or via a scheduled job. It calls the **Figma API** to fetch the entire design file.
+2.  **Data Storage**: The service parses the Figma file, extracts all text nodes, organizes them into a structured format (`Page > Screen > Text`), and stores the result in the **SQLite Database**. This decouples the API from Figma's availability and improves performance.
+3.  **Data Retrieval**: The **FastAPI Server** reads the structured data directly from the SQLite database when it receives a request from a client.
+4.  **API Consumption**: A **Mobile App** (or any other client) makes a request to a specific endpoint on the FastAPI server to get the texts it needs, either as a structured JSON object or as a formatted localization file.
 
 ## Installation
 
@@ -344,47 +367,4 @@ CMD ["python", "main.py"]
 ### Common Issues
 
 1. **"Import could not be resolved"**: Install dependencies with `pip install -r requirements.txt`
-2. **"No data found"**: Run sync first with `POST /api/sync` or `python sync_script.py`
-3. **"Figma API error"**: Check access token and file permissions in .env file
-4. **"Database error"**: Ensure write permissions for SQLite file
-5. **"FIGMA_FILE_KEY not set"**: Ensure your .env file has the correct Figma file key
-
-### Logs
-
-Check application logs for detailed error information:
-```bash
-python main.py 2>&1 | tee app.log
-```
-
-## Background / Daemon Mode (nohup)
-
-If you need the API to keep running after you close your SSH session or terminal window, use the **single manager script** `manage_api.sh`:
-
-```bash
-# One-time: make the script executable
-chmod +x manage_api.sh
-
-# Start the backend in the background (nohup)
-./manage_api.sh start
-
-# Check running status & PID
-./manage_api.sh status
-
-# Tail live logs (Ctrl-C to exit)
-./manage_api.sh logs
-
-# Gracefully restart
-./manage_api.sh restart
-
-# Stop the background server
-./manage_api.sh stop
-```
-
-The script automatically:
-
-1. Creates/activates the Python virtual environment (`venv/`) and installs missing requirements.
-2. Runs database migrations to ensure tables exist.
-3. Launches the API in the background using `nohup`, writing logs to `logs/figma_api.log`.
-4. Stores the process ID in `manage_api.pid` so that subsequent `status`, `stop`, or `restart` commands work reliably.
-
-No more multiple shell scripts or stray `*.out` files are needed – `manage_api.sh` is the only thing you need to control the API lifecycle.
+2. **"No data found"**: Run sync first with `POST /api/sync` or `
